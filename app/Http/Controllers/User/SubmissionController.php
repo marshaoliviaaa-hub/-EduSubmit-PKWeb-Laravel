@@ -3,63 +3,107 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Http\Requests\StoreSubmissionRequest;
+use App\Http\Requests\UpdateSubmissionRequest;
+use App\Models\Assignment;
+use App\Models\Submission;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class SubmissionController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        $assignments = Assignment::with(['course', 'submissions' => function ($query) {
+                $query->where('user_id', auth()->id());
+            }])
+            ->whereHas('course', fn($q) => $q->where('status', 'active'))
+            ->latest()
+            ->paginate(10);
+
+        return view('user.submissions.index', compact('assignments'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function show(Assignment $assignment)
     {
-        //
+        $submission = Submission::where('assignment_id', $assignment->id)
+            ->where('user_id', auth()->id())
+            ->first();
+
+        return view('user.submissions.show', compact('assignment', 'submission'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function store(StoreSubmissionRequest $request, Assignment $assignment)
     {
-        //
+        $existing = Submission::where('assignment_id', $assignment->id)
+            ->where('user_id', auth()->id())
+            ->exists();
+
+        if ($existing) {
+            return back()->with('error', 'Kamu sudah mengumpulkan tugas ini.');
+        }
+
+        if (now()->isAfter($assignment->due_date)) {
+            return back()->with('error', 'Deadline tugas sudah lewat.');
+        }
+
+        $file     = $request->file('file');
+        $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+        $path     = $file->storeAs('submissions', $filename, 'private');
+
+        Submission::create([
+            'assignment_id'     => $assignment->id,
+            'user_id'           => auth()->id(),
+            'file_path'         => $path,
+            'original_filename' => $file->getClientOriginalName(),
+            'notes'             => $request->notes,
+        ]);
+
+        return redirect()->route('user.submissions.show', $assignment)
+            ->with('success', 'Tugas berhasil dikumpulkan.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function edit(Submission $submission)
     {
-        //
+        abort_if($submission->user_id !== auth()->id(), 403);
+        abort_if($submission->status !== 'pending', 403, 'Tugas sudah dinilai, tidak bisa diedit.');
+
+        return view('user.submissions.edit', compact('submission'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    public function update(UpdateSubmissionRequest $request, Submission $submission)
     {
-        //
+        abort_if($submission->user_id !== auth()->id(), 403);
+        abort_if($submission->status !== 'pending', 403, 'Tugas sudah dinilai, tidak bisa diedit.');
+
+        $data = ['notes' => $request->notes];
+
+        if ($request->hasFile('file')) {
+            Storage::disk('private')->delete($submission->file_path);
+
+            $file     = $request->file('file');
+            $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+            $path     = $file->storeAs('submissions', $filename, 'private');
+
+            $data['file_path']         = $path;
+            $data['original_filename'] = $file->getClientOriginalName();
+        }
+
+        $submission->update($data);
+
+        return redirect()->route('user.submissions.show', $submission->assignment)
+            ->with('success', 'Submission berhasil diperbarui.');
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    public function destroy(Submission $submission)
     {
-        //
-    }
+        abort_if($submission->user_id !== auth()->id(), 403);
+        abort_if($submission->status !== 'pending', 403, 'Tugas sudah dinilai, tidak bisa dihapus.');
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        Storage::disk('private')->delete($submission->file_path);
+        $submission->delete();
+
+        return redirect()->route('user.submissions.index')
+            ->with('success', 'Submission berhasil dihapus.');
     }
 }
