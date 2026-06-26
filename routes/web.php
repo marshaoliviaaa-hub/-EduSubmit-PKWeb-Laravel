@@ -1,8 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
-use Illuminate\Http\Request;
 
 // Controllers Admin
 use App\Http\Controllers\Admin\CourseController as AdminCourseController;
@@ -20,28 +18,9 @@ Route::get('/', function () {
 });
 
 // ============================================================
-// EMAIL VERIFICATION
-// ============================================================
-Route::middleware('auth')->group(function () {
-    Route::get('/email/verify', function () {
-        return view('auth.verify-email');
-    })->name('verification.notice');
-
-    Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
-        $request->fulfill();
-        return redirect()->route('dashboard');
-    })->middleware('signed')->name('verification.verify');
-
-    Route::post('/email/verification-notification', function (Request $request) {
-        $request->user()->sendEmailVerificationNotification();
-        return back()->with('status', 'verification-link-sent');
-    })->middleware('throttle:6,1')->name('verification.send');
-});
-
-// ============================================================
 // DASHBOARD — redirect sesuai role setelah login
 // ============================================================
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', function () {
         if (auth()->user()->isAdmin()) {
             return redirect()->route('admin.courses.index');
@@ -53,7 +32,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // ============================================================
 // ADMIN ROUTES
 // ============================================================
-Route::middleware(['auth', 'verified', 'admin'])
+Route::middleware(['auth', 'admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
@@ -77,7 +56,7 @@ Route::middleware(['auth', 'verified', 'admin'])
 // ============================================================
 // USER ROUTES
 // ============================================================
-Route::middleware(['auth', 'verified'])
+Route::middleware(['auth'])
     ->prefix('user')
     ->name('user.')
     ->group(function () {
