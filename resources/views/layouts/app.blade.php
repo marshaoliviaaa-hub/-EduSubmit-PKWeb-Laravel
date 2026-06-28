@@ -7,51 +7,55 @@
     <title>{{ config('app.name', 'EduSubmit') }} - @yield('title', 'Dashboard')</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-gray-100 font-sans antialiased">
+<body class="bg-pink-50 font-sans antialiased">
 
     {{-- Navbar --}}
-    <nav class="bg-white shadow-sm border-b border-gray-200">
+    <nav class="bg-white shadow-sm border-b-2 border-pink-200 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
 
                 {{-- Logo --}}
-                <a href="{{ route('dashboard') }}" class="text-xl font-bold text-blue-600">
-                    EduSubmit
+                <a href="{{ route('dashboard') }}" class="flex items-center gap-2">
+                    <img src="{{ asset('images/logo-pnc.png') }}" alt="Logo PNC" class="h-9 w-auto">
+                    <div>
+                        <span class="text-lg font-bold text-pink-600">EduSubmit</span>
+                        <p class="text-xs text-gray-400 leading-none">Politeknik Negeri Cilacap</p>
+                    </div>
                 </a>
 
                 {{-- Nav Links --}}
-                <div class="flex items-center gap-6">
+                <div class="flex items-center gap-4">
                     @auth
                         @if(auth()->user()->isAdmin())
                             <a href="{{ route('admin.courses.index') }}"
-                               class="text-sm text-gray-600 hover:text-blue-600 {{ request()->routeIs('admin.courses*') ? 'text-blue-600 font-semibold' : '' }}">
-                                Courses
+                               class="text-sm px-3 py-1.5 rounded-lg transition {{ request()->routeIs('admin.courses*') ? 'bg-pink-100 text-pink-700 font-semibold' : 'text-gray-600 hover:bg-pink-50 hover:text-pink-600' }}">
+                                📚 Courses
                             </a>
                             <a href="{{ route('admin.submissions.index') }}"
-                               class="text-sm text-gray-600 hover:text-blue-600 {{ request()->routeIs('admin.submissions*') ? 'text-blue-600 font-semibold' : '' }}">
-                                Submissions
+                               class="text-sm px-3 py-1.5 rounded-lg transition {{ request()->routeIs('admin.submissions*') ? 'bg-pink-100 text-pink-700 font-semibold' : 'text-gray-600 hover:bg-pink-50 hover:text-pink-600' }}">
+                                📋 Submissions
                             </a>
                         @else
                             <a href="{{ route('user.submissions.index') }}"
-                               class="text-sm text-gray-600 hover:text-blue-600 {{ request()->routeIs('user.*') ? 'text-blue-600 font-semibold' : '' }}">
-                                Tugas Saya
+                               class="text-sm px-3 py-1.5 rounded-lg transition {{ request()->routeIs('user.*') ? 'bg-pink-100 text-pink-700 font-semibold' : 'text-gray-600 hover:bg-pink-50 hover:text-pink-600' }}">
+                                📝 Tugas Saya
                             </a>
                         @endif
 
                         {{-- User Info + Logout --}}
-                        <div class="flex items-center gap-3">
-                            <span class="text-sm text-gray-500">
-                                {{ auth()->user()->name }}
-                                <span class="ml-1 px-2 py-0.5 text-xs rounded-full
-                                    {{ auth()->user()->isAdmin() ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700' }}">
-                                    {{ auth()->user()->isAdmin() ? 'Admin' : 'User' }}
+                        <div class="flex items-center gap-2 ml-2 pl-2 border-l border-gray-200">
+                            <div class="text-right">
+                                <p class="text-sm font-medium text-gray-700">{{ auth()->user()->name }}</p>
+                                <span class="text-xs px-2 py-0.5 rounded-full
+                                    {{ auth()->user()->isAdmin() ? 'bg-pink-100 text-pink-700' : 'bg-rose-100 text-rose-600' }}">
+                                    {{ auth()->user()->isAdmin() ? 'Admin' : 'Mahasiswa' }}
                                 </span>
-                            </span>
+                            </div>
 
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
                                 <button type="submit"
-                                    class="text-sm text-red-500 hover:text-red-700">
+                                    class="ml-2 text-xs bg-red-50 text-red-500 hover:bg-red-100 px-3 py-1.5 rounded-lg transition">
                                     Logout
                                 </button>
                             </form>
@@ -66,20 +70,20 @@
     {{-- Flash Message --}}
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
         @if(session('success'))
-            <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
-                {{ session('success') }}
+            <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl flex items-center gap-2">
+                ✅ {{ session('success') }}
             </div>
         @endif
 
         @if(session('error'))
-            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                {{ session('error') }}
+            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center gap-2">
+                ❌ {{ session('error') }}
             </div>
         @endif
 
         @if($errors->any())
-            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                <ul class="list-disc list-inside text-sm">
+            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+                <ul class="list-disc list-inside text-sm space-y-1">
                     @foreach($errors->all() as $error)
                         <li>{{ $error }}</li>
                     @endforeach
@@ -94,8 +98,8 @@
     </main>
 
     {{-- Footer --}}
-    <footer class="text-center text-xs text-gray-400 py-6 mt-10 border-t border-gray-200">
-        &copy; {{ date('Y') }} EduSubmit. All rights reserved.
+    <footer class="text-center text-xs text-gray-400 py-6 mt-10 border-t border-pink-100">
+        &copy; {{ date('Y') }} <span class="text-pink-400 font-medium">EduSubmit</span> — Politeknik Negeri Cilacap. All rights reserved.
     </footer>
 
 </body>

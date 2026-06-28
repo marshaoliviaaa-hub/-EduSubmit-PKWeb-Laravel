@@ -11,8 +11,14 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware): void {
-        //
+    ->withMiddleware(function (Middleware $middleware) {
+        $middleware->alias([
+            'admin'        => \App\Http\Middleware\AdminMiddleware::class,
+            'log.activity' => \App\Http\Middleware\LogActivity::class,
+        ]);
+
+        $middleware->appendToGroup('web', \App\Http\Middleware\LogActivity::class);
+        $middleware->appendToGroup('web', \App\Http\Middleware\SecurityHeaders::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
